@@ -1,103 +1,115 @@
+/**
+ * Employee Queries Hook
+ * 
+ * This hook handles all data fetching operations for employee management.
+ * It provides functions to retrieve employee data from the Supabase database.
+ * 
+ * Key Features:
+ * - Fetch all employees from the database
+ * - Real-time data updates using React Query
+ * - Error handling for database operations
+ * - Loading states for better user experience
+ */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/types/employee';
 
+/**
+ * Custom hook for fetching employee data
+ * 
+ * @returns {Object} Query result containing:
+ * - data: Array of employee records
+ * - loading: Boolean indicating if data is being fetched
+ * - error: Any error that occurred during fetching
+ * - refetch: Function to manually refresh the data
+ */
 export const useEmployeeQueries = () => {
-  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use React Query to fetch and cache employee data
+  const {
+    data: employees = [], // Default to empty array if no data
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    // Unique key for this query - used for caching
+    queryKey: ['employees'],
+    
+    // Function that actually fetches the data
+    queryFn: async (): Promise<Employee[]> => {
+      console.log('🔍 Fetching employees from database...');
+      
+      // Query the employees table in Supabase
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*') // Select all columns
+        .order('name'); // Sort by name alphabetically
 
-  const fetchEmployees = async () => {
-    try {
-      console.log('📊 Fetching employees from database...');
-      setLoading(true);
-      setError(null);
-
-      // Fetch from profiles table which is linked to leave_requests
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('is_active', true)
-        .order('full_name');
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
+      // Handle any database errors
+      if (error) {
+        console.error('❌ Error fetching employees:', error);
+        throw error;
       }
 
-      // Also fetch from employees table for additional details if available
-      const { data: employeesData } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('status', 'Active');
+      console.log(`✅ Successfully fetched ${data?.length || 0} employees`);
+      
+      // Transform database records to match our Employee interface
+      return (data || []).map(emp => ({
+        // Map database fields to Employee type properties
+        id: emp.employee_id,
+        name: emp.name,
+        email: emp.email,
+        phone: emp.phone || '',
+        department: emp.department || '',
+        position: emp.role || '',
+        role: emp.role || '',
+        status: emp.status || 'Active',
+        joinDate: emp.join_date || new Date().toISOString().split('T')[0],
+        address: emp.address || '',
+        dateOfBirth: emp.date_of_birth || '',
+        profilePictureUrl: emp.profile_picture_url,
+        manager: emp.manager || '',
+        baseSalary: emp.base_salary || 0,
+        
+        // Emergency contact information
+        emergencyContact: {
+          name: 'Not specified',
+          phone: 'Not specified', 
+          relationship: 'Not specified'
+        },
+        
+        // Login credentials for employee portal access
+        loginCredentials: {
+          loginEmail: emp.login_email || emp.email,
+          password: emp.login_password || '',
+          isActive: emp.login_access || false
+        },
+        
+        // Employment history tracking
+        employmentHistory: [{
+          title: emp.role || 'Employee',
+          department: emp.department || '',
+          startDate: emp.join_date || new Date().toISOString().split('T')[0],
+          current: true
+        }],
+        
+        // Document storage (empty by default)
+        documents: []
+      }));
+    },
+    
+    // Refetch data every 5 minutes to keep it fresh
+    refetchInterval: 5 * 60 * 1000,
+    
+    // Keep data fresh when window regains focus
+    refetchOnWindowFocus: true
+  });
 
-      console.log('✅ Fetched profiles:', profilesData?.length || 0);
-      console.log('✅ Fetched employees:', employeesData?.length || 0);
-
-      // Transform profiles to Employee format, merging with employees data where possible
-      const transformedEmployees: Employee[] = (profilesData || []).map((profile: any) => {
-        // Try to find matching employee record
-        const employeeRecord = employeesData?.find(emp => 
-          emp.email === profile.email || emp.login_email === profile.email
-        );
-
-        return {
-          id: profile.id, // Use profile ID which matches leave_requests.employee_id FK
-          name: profile.full_name || profile.email,
-          email: profile.email,
-          department: profile.department || employeeRecord?.department || 'Not specified',
-          position: profile.position || employeeRecord?.role || 'Not specified',
-          role: profile.position || employeeRecord?.role || 'Not specified',
-          phone: profile.phone || employeeRecord?.phone || '',
-          status: profile.is_active ? 'Active' : 'Inactive',
-          joinDate: employeeRecord?.join_date || new Date().toISOString().split('T')[0],
-          profilePictureUrl: profile.avatar_url || employeeRecord?.profile_picture_url,
-          manager: employeeRecord?.manager || '',
-          address: employeeRecord?.address || '',
-          baseSalary: employeeRecord?.base_salary || 0,
-          dateOfBirth: employeeRecord?.date_of_birth || new Date().toISOString().split('T')[0],
-          
-          // Initialize additional required properties
-          emergencyContact: {
-            name: '',
-            phone: '',
-            relationship: ''
-          },
-          loginCredentials: {
-            loginEmail: employeeRecord?.login_email || profile.email,
-            password: employeeRecord?.login_password || '',
-            isActive: employeeRecord?.login_access || false
-          },
-          employmentHistory: [{
-            title: profile.position || employeeRecord?.role || 'Not specified',
-            department: profile.department || employeeRecord?.department || 'Not specified',
-            startDate: employeeRecord?.join_date || new Date().toISOString().split('T')[0],
-            current: true
-          }],
-          documents: []
-        };
-      });
-
-      setAllEmployees(transformedEmployees);
-      console.log('✅ Transformed employees:', transformedEmployees.length);
-    } catch (err: any) {
-      console.error('❌ Error fetching employees:', err);
-      setError(err.message || 'Failed to fetch employees');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
+  // Return the query results for use in components
   return {
-    allEmployees,
-    setAllEmployees,
+    employees,
     loading,
     error,
-    fetchEmployees
+    refetch
   };
 };
