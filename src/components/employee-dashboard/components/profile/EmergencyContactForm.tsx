@@ -2,14 +2,16 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface EmergencyContactFormData {
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  emergencyContactRelationship: string;
+}
+
 interface EmergencyContactFormProps {
-  formData: {
-    emergencyContactName: string;
-    emergencyContactPhone: string;
-    emergencyContactRelationship: string;
-  };
+  formData: EmergencyContactFormData;
   isEditing: boolean;
-  onFormDataChange: (updates: Partial<typeof formData>) => void;
+  onFormDataChange: (updates: Partial<EmergencyContactFormData>) => void;
   loading: boolean;
 }
 

@@ -3,15 +3,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+interface PersonalFormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 interface PersonalInformationFormProps {
-  formData: {
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-  };
+  formData: PersonalFormData;
   isEditing: boolean;
-  onFormDataChange: (updates: Partial<typeof formData>) => void;
+  onFormDataChange: (updates: Partial<PersonalFormData>) => void;
   loading: boolean;
 }
 
