@@ -23,14 +23,12 @@ interface EmployeeDashboardTabsProps {
   employee: DashboardEmployee;
   activeTab: string;
   onTabChange: (tab: string) => void;  
-  onProfileUpdate: (updates: any) => void;
 }
 
 const EmployeeDashboardTabs = ({
   employee,
   activeTab,
-  onTabChange,
-  onProfileUpdate
+  onTabChange
 }: EmployeeDashboardTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
@@ -76,7 +74,6 @@ const EmployeeDashboardTabs = ({
       <TabsContent value="profile" className="space-y-6">
         <EditEmployeeProfile 
           employee={employee} 
-          onUpdate={onProfileUpdate}
         />
         <EmployeeProfileView employee={employee} />
       </TabsContent>
