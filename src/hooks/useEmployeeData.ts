@@ -21,7 +21,7 @@ import { useEmployeeOperations } from './employee/useEmployeeOperations';
 import { Employee } from '@/types/employee';
 
 // Re-export the Employee type for backward compatibility
-export { Employee } from '@/types/employee';
+export type { Employee } from '@/types/employee';
 
 /**
  * Combined employee data management hook

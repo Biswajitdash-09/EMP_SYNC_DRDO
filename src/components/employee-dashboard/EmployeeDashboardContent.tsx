@@ -80,7 +80,6 @@ const EmployeeDashboardContent = ({
           employee={employeeWithSalaryAndLeave}
           activeTab={activeTab}
           onTabChange={onTabChange}
-          onProfileUpdate={onProfileUpdate}
         />
       </div>
     </div>
