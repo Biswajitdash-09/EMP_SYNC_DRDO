@@ -1,5 +1,5 @@
 /**
- * Generate Report Form Component for Quick Actions
+ * Generates a Report Form Component for Quick Actions
  * Creates reports using data from main system records
  * Supports multiple report types with real-time data integration
  */
